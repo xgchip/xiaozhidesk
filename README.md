@@ -4,9 +4,18 @@
 
 本项目参考虾哥的开源项目 [78/xiaozhi-esp32](https://github.com/78/xiaozhi-esp32)，在电脑上实现兼容的设备身份、激活与 WebSocket/Opus 协议。它是独立的社区桌面客户端，不运行 ESP32 固件，也不需要购买开发板。
 
+## 界面预览
+
+v0.4.0 使用奶油色窄窗口、圆形头像光环与暖色聊天气泡。下面是 Windows 客户端的实际界面，未连接账号，也未展示私人对话或设备信息。
+
+<p align="center">
+  <img src="docs/images/call.png" alt="小智电脑版通话首页" width="320" />
+  <img src="docs/images/settings.png" alt="通话停顿速度与声音设置" width="320" />
+</p>
+
 ## 开始使用
 
-当前版本 **v0.3.0**，已在 Windows 环境验证。安装包见 [Releases](https://github.com/xgchip/xiaozhidesk/releases)。
+当前版本 **v0.4.0**，已在 Windows 环境验证。安装包见 [Releases](https://github.com/xgchip/xiaozhidesk/releases)。
 
 1. 安装并启动「小智电脑版」。Windows 10/11 需要 WebView2 Runtime。
 2. 自行前往 [小智网站](https://xiaozhi.me) 注册或登录账号。
@@ -30,7 +39,6 @@
 
 鼠标移入后可拖动、静音或展开。双击角色、右键、点击气泡或按 Esc 返回完整窗口。角色会响应聆听、思考和说话状态，气泡显示最近一句回复。
 
-项目图片将在后续 UI 优化版本补充。
 
 ## 本地开发
 

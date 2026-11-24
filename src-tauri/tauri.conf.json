@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "小智电脑版",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "me.xiaozhi.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -13,10 +13,11 @@
     "windows": [
       {
         "title": "小智电脑版",
-        "width": 900,
-        "height": 760,
-        "minWidth": 680,
+        "width": 420,
+        "height": 776,
+        "minWidth": 380,
         "minHeight": 600,
+        "decorations": false,
         "transparent": true,
         "backgroundColor": "#00000000"
       }
@@ -27,8 +28,12 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "resources": ["../THIRD-PARTY-NOTICES.txt"],
+    "targets": [
+      "nsis"
+    ],
+    "resources": [
+      "../THIRD-PARTY-NOTICES.txt"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -38,6 +43,13 @@
     ],
     "shortDescription": "小智电脑版：语音通话与桌面宠物",
     "category": "Utility",
-    "windows": { "nsis": { "languages": ["SimpChinese", "English"] } }
+    "windows": {
+      "nsis": {
+        "languages": [
+          "SimpChinese",
+          "English"
+        ]
+      }
+    }
   }
 }

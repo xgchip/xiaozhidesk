@@ -552,6 +552,7 @@ fn main() {
             disconnect_device,
             send_text,
             open_console,
+            window_mode::window_action,
             window_mode::get_window_mode,
             window_mode::set_pet_mode,
             window_mode::drag_pet

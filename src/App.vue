@@ -4,6 +4,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
   AudioLines,
+  Minus,
   ArrowUp,
   ArrowUpRight,
   ArrowLeft,
@@ -23,7 +24,6 @@ import {
   ShieldCheck,
   Square,
   Terminal,
-  Trash2,
   Volume2,
   VolumeX,
   X,
@@ -36,6 +36,22 @@ import {
   type Phase,
 } from "./model";
 import RobotCharacter from "./RobotCharacter.vue";
+import avatarUrl from "./assets/xiaozhi-avatar.jpg";
+
+async function windowAction(
+  action: "minimize" | "maximize" | "close" | "drag",
+) {
+  if (!native) return;
+  try {
+    await invoke("window_action", { action });
+  } catch (e) {
+    fail(e);
+  }
+}
+function dragTitlebar(event: PointerEvent) {
+  if (event.button === 0 && !(event.target as HTMLElement).closest("button"))
+    void windowAction("drag");
+}
 
 const native = isTauri();
 const petMode = ref(false),
@@ -656,7 +672,43 @@ onUnmounted(() => {
     </div>
   </section>
 
-  <div v-else class="app-shell">
+  <div v-else class="app-shell" :class="{ calling: callEnabled }">
+    <div
+      class="titlebar"
+      @pointerdown="dragTitlebar"
+      @dblclick.self="windowAction('maximize')"
+    >
+      <span class="tb-dot"></span><span class="tb-title">小智 · 桌面通话</span>
+      <div class="tb-actions" @dblclick.stop>
+        <button
+          class="tb-btn"
+          aria-label="最小化"
+          title="最小化"
+          :disabled="!native"
+          @click="windowAction('minimize')"
+        >
+          <Minus :size="10" />
+        </button>
+        <button
+          class="tb-btn"
+          aria-label="最大化或还原"
+          title="最大化 / 还原"
+          :disabled="!native"
+          @click="windowAction('maximize')"
+        >
+          <Square :size="10" />
+        </button>
+        <button
+          class="tb-btn close"
+          aria-label="关闭窗口"
+          title="关闭"
+          :disabled="!native"
+          @click="windowAction('close')"
+        >
+          <X :size="10" />
+        </button>
+      </div>
+    </div>
     <header class="app-header">
       <button
         v-if="page !== 'chat'"
@@ -668,7 +720,7 @@ onUnmounted(() => {
       </button>
       <div class="brand">
         <span class="brand-mark"><AudioLines :size="21" /></span
-        ><span>小智<span class="brand-dot">.</span></span>
+        ><span>小智</span>
       </div>
       <div class="header-status">
         <span
@@ -727,129 +779,149 @@ onUnmounted(() => {
         ><button class="text-button" @click="disconnect">取消</button>
       </div>
 
-      <div v-else-if="!messages.length" class="welcome">
-        <button
-          class="welcome-character"
-          title="变成桌面宠物"
-          aria-label="点击小智变成桌面宠物"
-          :disabled="petBusy || busy"
-          @click="togglePet(true)"
-        >
-          <RobotCharacter :phase="phase" :emotion="emotion" />
-        </button>
-        <h1>{{ headline }}</h1>
-        <p>
-          {{
-            callEnabled
-              ? "停顿后自动发送，随时可以开口打断我。"
-              : "像打电话一样，直接聊聊吧。"
-          }}
-        </p>
-        <button
-          v-if="!callWanted"
-          class="primary connect-button"
-          :disabled="busy || !native"
-          @click="toggleCall"
-        >
-          <Phone :size="17" />{{ busy ? "连接中…" : "开始通话" }}
-        </button>
-        <button
-          v-else
-          class="welcome-pet-link"
-          :disabled="petBusy"
-          @click="togglePet(true)"
-        >
-          <PawPrint :size="14" /> 也可以，把我放到桌面上
-          <ChevronRight :size="13" />
-        </button>
-      </div>
-
-      <div v-else class="conversation-area">
-        <div class="conversation-toolbar">
-          <span>今天</span
-          ><button
-            class="icon-button"
-            aria-label="清空本次聊天"
-            title="清空聊天"
-            @click="messages = []"
-          >
-            <Trash2 :size="16" />
-          </button>
-        </div>
-        <div ref="messageList" class="messages" aria-live="polite">
-          <article
-            v-for="message in messages"
-            :key="message.id"
-            class="message"
-            :class="message.role"
-          >
-            <span v-if="message.role === 'assistant'" class="message-avatar"
-              ><AudioLines :size="17"
-            /></span>
-            <div class="message-content">
-              <p>{{ message.text }}</p>
-              <time>{{ message.time }}</time>
+      <template v-else>
+        <div class="call-content">
+          <div class="avatar-block">
+            <div class="halo"></div>
+            <div v-for="n in 3" :key="n" class="ring"></div>
+            <button
+              class="call-avatar"
+              aria-label="点击小智变成桌面宠物"
+              title="变成桌面宠物"
+              :disabled="petBusy || busy"
+              @click="togglePet(true)"
+            >
+              <span class="avatar-frame"
+                ><img :src="avatarUrl" alt="小智头像" draggable="false"
+              /></span>
+              <span
+                class="online-badge"
+                :class="{ disconnected: !connected }"
+                :aria-label="statusLabel"
+              ></span>
+            </button>
+            <div
+              class="voice-bars"
+              :class="{ active: phase === 'listening' || phase === 'speaking' }"
+              aria-hidden="true"
+            >
+              <span
+                v-for="n in 5"
+                :key="n"
+                :style="
+                  phase === 'listening'
+                    ? {
+                        height: `${6 + Math.min(14, level * 110) * (0.5 + (n % 3) / 4)}px`,
+                      }
+                    : {}
+                "
+              ></span>
             </div>
-          </article>
-          <div v-if="phase === 'thinking'" class="thinking">
-            <i></i><i></i><i></i>
+          </div>
+          <div ref="messageList" class="stage" aria-live="polite">
+            <div v-if="!messages.length" class="intro">
+              <h1>{{ headline }}</h1>
+              <p>
+                {{
+                  callEnabled
+                    ? "停顿后自动发送，随时开口打断我。"
+                    : "像打电话一样，直接聊聊吧。"
+                }}
+              </p>
+            </div>
+            <div v-else class="msgs">
+              <article
+                v-for="message in messages"
+                :key="message.id"
+                class="msg"
+                :class="message.role === 'user' ? 'me' : 'bot'"
+              >
+                {{ message.text }}
+              </article>
+              <div
+                v-if="phase === 'thinking'"
+                class="msg bot typing"
+                aria-label="小智正在思考"
+              >
+                <i></i><i></i><i></i>
+              </div>
+            </div>
+          </div>
+          <div class="call-row">
+            <button
+              class="call-btn"
+              :class="{ pending: callWanted && !callEnabled }"
+              :disabled="!native || ((busy || controlBusy) && !callWanted)"
+              @click="toggleCall"
+            >
+              <Phone :size="17" /><span>{{
+                callWanted
+                  ? callEnabled
+                    ? "结束通话"
+                    : "取消连接"
+                  : "开始通话"
+              }}</span>
+            </button>
           </div>
         </div>
-      </div>
-
-      <div class="composer-area">
-        <div class="voice-state" aria-live="polite">
-          <span v-if="phase === 'listening'" class="live-wave"
-            ><i
-              v-for="n in 12"
-              :key="n"
-              :style="{
-                height: `${4 + Math.min(22, level * 130) * (0.4 + (n % 4) / 4)}px`,
-              }"
-            ></i></span
-          ><span v-if="phase === 'listening'">正在听，停顿后自动发送</span
-          ><button
-            v-if="phase === 'speaking' || phase === 'thinking'"
-            class="interrupt-button"
-            @click="abort"
-          >
-            <Square :size="11" fill="currentColor" /> 打断
-          </button>
-        </div>
-        <div class="composer">
-          <button
-            class="mic-button"
-            :class="{ recording: phase === 'listening', 'in-call': callWanted }"
-            :disabled="!native || ((busy || controlBusy) && !callWanted)"
-            :aria-label="callWanted ? '结束通话' : '开始通话'"
-            @click="toggleCall"
-          >
-            <PhoneOff v-if="callWanted" :size="21" /><Phone v-else :size="21" />
-          </button>
-          <form @submit.prevent="sendText">
+        <div class="call-composer">
+          <form class="input-wrap" @submit.prevent="sendText">
+            <button
+              type="button"
+              class="side-btn"
+              :disabled="!native || ((busy || controlBusy) && !callWanted)"
+              :aria-label="callWanted ? '结束通话' : '开始通话'"
+              :title="callWanted ? '结束通话' : '开始通话'"
+              @click="toggleCall"
+            >
+              <PhoneOff v-if="callWanted" :size="18" /><Phone
+                v-else
+                :size="18"
+              />
+            </button>
             <input
               v-model="draft"
               aria-label="发送文字"
               :disabled="!connected || phase === 'listening'"
-              :placeholder="connected ? '和小智说点什么…' : '连接后开始聊天'"
+              :placeholder="connected ? '说点什么吧…' : '连接后开始聊天'"
               maxlength="2000"
-            /><button
-              class="send-button"
+              autocomplete="off"
+            />
+            <button
+              class="send-btn"
+              :class="{
+                on: connected && draft.trim() && phase !== 'listening',
+              }"
               aria-label="发送文字"
               :disabled="!connected || !draft.trim() || phase === 'listening'"
             >
-              <ArrowUp :size="19" />
+              <ArrowUp :size="16" />
             </button>
           </form>
+          <div class="hint">
+            <template v-if="callEnabled"
+              ><span
+                >{{ phase === "listening" ? "正在聆听" : "随时开口打断" }} ·
+                停顿 {{ (silenceMs / 1000).toFixed(2) }} 秒自动发送</span
+              ></template
+            >
+            <template v-else-if="callWanted"
+              ><span>正在连接，点击电话可取消</span></template
+            >
+            <template v-else
+              ><kbd>Space</kbd><span>开始 / 结束通话</span></template
+            >
+            <button
+              v-if="phase === 'speaking' || phase === 'thinking'"
+              class="call-interrupt"
+              @click="abort"
+              title="停止回复"
+            >
+              <Square :size="10" fill="currentColor" />打断
+            </button>
+          </div>
         </div>
-        <div class="composer-hint">
-          <template v-if="callEnabled"
-            >随时开口打断 · 停顿
-            {{ (silenceMs / 1000).toFixed(2) }} 秒后自动发送</template
-          ><template v-else-if="callWanted">正在连接，点击电话可取消</template
-          ><template v-else><kbd>Space</kbd> 开始 / 结束通话</template>
-        </div>
-      </div>
+      </template>
     </main>
 
     <main v-else-if="page === 'settings'" class="settings-page">

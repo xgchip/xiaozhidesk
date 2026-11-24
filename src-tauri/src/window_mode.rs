@@ -19,12 +19,38 @@ struct Mode {
 #[derive(Default)]
 pub struct WindowMode(Mutex<Mode>);
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WindowAction {
+    Minimize,
+    Maximize,
+    Close,
+    Drag,
+}
+
+#[tauri::command]
+pub fn window_action(window: WebviewWindow, action: WindowAction) -> Result<(), String> {
+    let result = match action {
+        WindowAction::Minimize => window.minimize(),
+        WindowAction::Maximize => {
+            if window.is_maximized().map_err(|e| e.to_string())? {
+                window.unmaximize()
+            } else {
+                window.maximize()
+            }
+        }
+        WindowAction::Close => window.close(),
+        WindowAction::Drag => window.start_dragging(),
+    };
+    result.map_err(|e| e.to_string())
+}
+
 fn restore(window: &WebviewWindow, saved: &MainWindow) -> tauri::Result<()> {
     window.set_always_on_top(false)?;
     window.set_resizable(true)?;
-    window.set_decorations(true)?;
+    window.set_decorations(false)?;
     window.set_shadow(true)?;
-    window.set_min_size(Some(LogicalSize::new(680.0, 600.0)))?;
+    window.set_min_size(Some(LogicalSize::new(380.0, 600.0)))?;
     window.set_size(saved.size)?;
     window.set_position(saved.position)?;
     if saved.maximized {

@@ -1,0 +1,27 @@
+[package]
+name = "xiaozhi-desktop"
+version = "0.3.0"
+description = "XiaoZhi desktop voice companion"
+edition = "2021"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["sync", "time", "macros"] }
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+cpal = "0.15.3"
+opus = "0.3"
+sonora = "0.3.0"
+webrtc-vad = "0.4.0"
+
+[profile.release]
+lto = "thin"
+strip = true
